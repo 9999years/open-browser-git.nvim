@@ -53,9 +53,16 @@ function command(executable, arguments, options)
 	if result.stderr[#result.stderr] == "" then
 		result.stderr[#result.stderr] = nil
 	end
-    if result.exit_code != 0 then
-      vim.notify("command failed blah blah blah", vim.log.levels.ERROR)
-    end
+	if result.exit_code ~= 0 then
+		local error = executable .. " failed with exit code " .. result.exit_code
+		if #result.stdout > 0 then
+			error = error .. "\nStdout: " .. vim.fn.join(result.stdout, "\n")
+		end
+		if #result.stderr > 0 then
+			error = error .. "\nStderr: " .. vim.fn.join(result.stderr, "\n")
+		end
+		vim.notify(error, vim.log.levels.ERROR)
+	end
 	return result
 end
 

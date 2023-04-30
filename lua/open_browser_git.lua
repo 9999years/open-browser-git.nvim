@@ -72,4 +72,30 @@ function git(args)
 	})
 end
 
+function parse_git_remote_url(url)
+	-- User, repo, whitespace.
+	-- NB: We trim a trailing `.git` from the repo.
+	local user_repo_pattern = "([^/]+)/([^/]+)%s"
+	local patterns = {
+		-- NB: This first pattern also matches ssh://git@... URLs.
+		"git@([^:/]+)[:/]" .. user_repo_pattern, -- ssh
+		"%s([^:/]+)[:/]" .. user_repo_pattern, -- ssh
+		"ssh://([^/]+)/" .. user_repo_pattern, -- ssh
+		"git://([^/]+)/" .. user_repo_pattern, -- git
+		"https?://([^/]+)/" .. user_repo_pattern, -- http(s)
+	}
+	local matches = {}
+	for _, pattern in ipairs(patterns) do
+		local match = string.match(url, pattern)
+		if match ~= nil then
+			table.insert(matches, {
+				host = match[1],
+				user = match[2],
+				repo = string.gsub(match[3], "%.git$", ""),
+			})
+		end
+	end
+	return matches
+end
+
 print(vim.inspect(git({ "remote", "-v" })))

@@ -61,7 +61,8 @@ function command(executable, arguments, options)
 		if #result.stderr > 0 then
 			error = error .. "\nStderr: " .. vim.fn.join(result.stderr, "\n")
 		end
-		vim.notify(error, vim.log.levels.ERROR)
+		-- TODO: Is `vim.notify(error, vim.log.levels.ERROR)` better?
+		assert(false, error)
 	end
 	return result
 end
@@ -96,6 +97,44 @@ function parse_git_remote_url(url)
 		end
 	end
 	return matches
+end
+
+function format_repo(repo)
+	return repo.host .. "/" .. repo.repo .. "/" .. repo.user
+end
+
+function parse_git_remote(lines, callback)
+	local repos = {}
+	for _, line in ipairs(lines) do
+		vim.list_extend(repos, parse_github_remote_url(line))
+	end
+	table.sort(repos, function(a, b)
+		return format_repo(a) < format_repo(b)
+	end)
+	vim.fn.uniq(repos, function(a, b)
+		-- Ugh.
+		local formatted_a = format_repo(a)
+		local formatted_b = format_repo(b)
+		if formatted_a < formatted_b then
+			return -1
+		elseif formatted_a > formatted_b then
+			return 1
+		else
+			return 0
+		end
+	end)
+	if #repos == 0 then
+		assert(false, "No Git repos detected from `git remote -v` output")
+	elseif #repos == 1 then
+		callback(repos[1])
+	else
+		vim.ui.select(repos, {
+			prompt = "Git repo",
+			format_item = function(repo)
+				return format_repo(repo)
+			end,
+		}, callback)
+	end
 end
 
 print(vim.inspect(git({ "remote", "-v" })))

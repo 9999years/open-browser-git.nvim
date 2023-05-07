@@ -92,7 +92,9 @@ function M.setup(config)
     M.browser = M.get_browser()
   end
   if M.browser == nil then
-    error("No browser found for your platform. Please set a browser explicitly.")
+    error(
+      "No browser found for your platform. Please set a browser explicitly."
+    )
   end
 end
 

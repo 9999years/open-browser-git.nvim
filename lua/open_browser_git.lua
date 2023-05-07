@@ -87,21 +87,8 @@ function M.parse_git_remote(lines, callback)
   end
 end
 
-function M.get_git_repo(callback)
-  -- TODO cwd
-  M.parse_git_remote(require("open_browser_git.command").git({ "remote", "-v" }).stdout, callback)
-end
-
-function M.resolve_git_path(path)
-  local path_dir = vim.fs.dirname(path)
-  -- If you have newlines in your filenames: Don't.
-  return require("open_browser_git.command").git({
-    "ls-files",
-    "--cached", -- Show tracked files.
-    "--other", -- Show untracked files.
-    "--full-name", -- Paths relative to repository root.
-    path,
-  }, { cwd = path_dir }).stdout[1]
+function M.get_git_repo(path, callback)
+  M.parse_git_remote(path:git({ "remote", "-v" }).stdout, callback)
 end
 
 -- If the `path` is given, open that file in a browser.
@@ -110,15 +97,11 @@ end
 --
 -- open_git(path: string|nil, options: {lines: {line1: int, line2: int}|nil}|nil)
 function M.open_git(path, options)
-  if path == nil or path == "" then
-    path = vim.fn.expand("%")
-  end
-  local path_dir = vim.fs.dirname(path)
-  local path = M.resolve_git_path(path)
-  M.get_git_repo(function(repo)
+  path = require("open_browser_git.path"):new(path)
+  M.get_git_repo(path, function(repo)
     -- TODO: Find the most recent _pushed_ commit.
-    local commit = require("open_browser_git.command").git({ "rev-parse", "HEAD" }, { cwd = path_dir }).stdout[1]
-    local url = repo:url_for_file(path, commit, options)
+    local commit = path:git({ "rev-parse", "HEAD" }).stdout[1]
+    local url = repo:url_for_file(path:relative_to_root(), commit, options)
     require("open_browser_git.open_browser").open_url(url)
   end)
 end
@@ -137,8 +120,7 @@ function M.setup(config)
     vim.api.nvim_create_user_command(prefix, function(args)
       local opts = {}
       if args.range > 0 then
-        opts.line1 = args.line1
-        opts.line2 = args.line2
+        opts.lines = { line1 = args.line1, line2 = args.line2 }
       end
       M.open_git(args.args, opts)
     end, {

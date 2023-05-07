@@ -108,8 +108,8 @@ end
 -- Get the URL for a given path in this repo.
 -- Paths are given relative to the repository root.
 -- Options (any values may be nil):
---  - lines: {first: int, last: int}. A range of lines to view.
---    If start == end, implementations may simplify the URL.
+--  - lines: {line1: int, line2: int}. A range of lines to view.
+--    If line1 == line2, implementations may simplify the URL.
 --
 -- self:url_for_file(file_path, commit, options: table) -> string
 function Repo:url_for_file(file_path, commit, options)
@@ -128,10 +128,10 @@ function Repo:url_for_file(file_path, commit, options)
     -- Line range, if any.
     if options.lines ~= nil then
       -- Start line.
-      url = url .. "#L" .. options.lines.first
-      if options.lines.first ~= options.lines.last then
+      url = url .. "#L" .. options.lines.line1
+      if options.lines.line1 ~= options.lines.line2 then
         -- End line, if different than start.
-        url = url .. "-L" .. options.lines.last
+        url = url .. "-L" .. options.lines.line2
       end
     end
   end

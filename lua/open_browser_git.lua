@@ -108,7 +108,7 @@ end
 --
 -- If the `path` is absent, open the repo's homepage.
 --
--- open_git(path: string|nil, options: {lines: {first: int, last: int}|nil}|nil)
+-- open_git(path: string|nil, options: {lines: {line1: int, line2: int}|nil}|nil)
 function M.open_git(path, options)
   local path_dir = vim.fs.dirname(path)
   local path = M.resolve_git_path(path)
@@ -121,10 +121,29 @@ function M.open_git(path, options)
 end
 
 -- browser: string|{ cmd: string, args: list<string>|nil }
--- config: { browser: browser|nil }
+-- config: { browser: browser|nil,
+--           create_commands: bool = true,
+--           command_prefix: string = "OpenGit",
+--         }
 function M.setup(config)
   if config.browser ~= nil then
     require("open_browser_git.open_browser").setup(config)
+  end
+  if (config.create_commands == nil) or config.create_commands then
+    local prefix = config.command_prefix or "OpenGit"
+    nvim_create_user_command(prefix, function(args)
+      local opts = {}
+      if args.range > 0 then
+        opts.line1 = args.line1
+        opts.line2 = args.line2
+      end
+      M.open_git(args.args, opts)
+    end, {
+      complete = "file",
+      desc = "",
+      nargs = "?", -- 0 or 1.
+      range = true, -- Default current line.
+    })
   end
 end
 

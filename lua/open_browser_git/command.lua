@@ -35,7 +35,13 @@ function M.command(executable, arguments, options)
     result.stderr[#result.stderr] = nil
   end
   if result.exit_code ~= 0 then
-    local message = executable .. " failed with exit code " .. result.exit_code
+    local message = executable
+      .. " failed with exit code "
+      .. result.exit_code
+      .. "\nError executing: "
+      .. executable
+      .. " "
+      .. vim.fn.join(arguments, " ")
     if #result.stdout > 0 then
       message = message .. "\nStdout: " .. vim.fn.join(result.stdout, "\n")
     end

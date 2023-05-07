@@ -131,7 +131,7 @@ function M.setup(config)
   end
   if (config.create_commands == nil) or config.create_commands then
     local prefix = config.command_prefix or "OpenGit"
-    nvim_create_user_command(prefix, function(args)
+    vim.api.nvim_create_user_command(prefix, function(args)
       local opts = {}
       if args.range > 0 then
         opts.line1 = args.line1

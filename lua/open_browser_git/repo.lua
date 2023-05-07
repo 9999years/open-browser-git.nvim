@@ -32,39 +32,39 @@ local Repo = {}
 --
 -- Repo:new({host: string, user: string, repo: string, remote_name: string|nil}) -> self
 function Repo:new(ret)
-	if ret.host:find("gitlab") then
-		ret.flavor = "gitlab"
-	elseif ret.host:find("github") then
-		ret.flavor = "github"
-	end
-	setmetatable(ret, self)
-	self.__index = self
-	return ret
+  if ret.host:find("gitlab") then
+    ret.flavor = "gitlab"
+  elseif ret.host:find("github") then
+    ret.flavor = "github"
+  end
+  setmetatable(ret, self)
+  self.__index = self
+  return ret
 end
 
 --  Display the repo to the user.
 --
 --  self:display() -> string
 function Repo:display()
-	-- Example: github.com/NixOS/nixpkgs
-	local displayed = self.host .. "/" .. self.user .. "/" .. self.repo
-	if self.remote_name == nil then
-		return displayed
-	else
-		return displayed .. " (" .. self.remote_name .. ")"
-	end
+  -- Example: github.com/NixOS/nixpkgs
+  local displayed = self.host .. "/" .. self.user .. "/" .. self.repo
+  if self.remote_name == nil then
+    return displayed
+  else
+    return displayed .. " (" .. self.remote_name .. ")"
+  end
 end
 
 -- Get the URL for this repo; a homepage or similar.
 --
 --  self:url() -> string
 function Repo:url()
-	-- TODO: Support non-HTTPS repository URLs?
-	-- NB: This _could_ forward out to `self:display` but philisophically I
-	-- want these to be separate.
-	--
-	-- Example: https://github.com/NixOS/nixpkgs
-	return "https://" .. self.host .. "/" .. self.user .. "/" .. self.repo
+  -- TODO: Support non-HTTPS repository URLs?
+  -- NB: This _could_ forward out to `self:display` but philisophically I
+  -- want these to be separate.
+  --
+  -- Example: https://github.com/NixOS/nixpkgs
+  return "https://" .. self.host .. "/" .. self.user .. "/" .. self.repo
 end
 
 -- Get the URL for a commit or branch in this repo.
@@ -73,21 +73,21 @@ end
 --
 -- self:url_for_commit(commit_hash) -> string
 function Repo:url_for_commit(commit_hash)
-	-- Example: https://github.com/NixOS/nixpkgs/tree/master
-	return self:url() .. "/tree/" .. commit_hash
+  -- Example: https://github.com/NixOS/nixpkgs/tree/master
+  return self:url() .. "/tree/" .. commit_hash
 end
 
 -- Get the URL for an issue in this repo, by number.
 -- self:url_for_issue(issue_number) -> string
 function Repo:url_for_issue(issue_number)
-	if self.flavor == "gitlab" then
-		-- Example: https://gitlab.haskell.org/ghc/ghc/-/issues/23351
-		return self:url() .. "/-/issues/" .. issue_number
-	else
-		-- GitHub or other flavors.
-		-- Example: https://github.com/NixOS/nixpkgs/issues/226215
-		return self:url() .. "/issues/" .. issue_number
-	end
+  if self.flavor == "gitlab" then
+    -- Example: https://gitlab.haskell.org/ghc/ghc/-/issues/23351
+    return self:url() .. "/-/issues/" .. issue_number
+  else
+    -- GitHub or other flavors.
+    -- Example: https://github.com/NixOS/nixpkgs/issues/226215
+    return self:url() .. "/issues/" .. issue_number
+  end
 end
 
 -- Get the URL for a pull request / merge request in this repo, by number.
@@ -96,13 +96,13 @@ end
 --
 -- self:url_for_pr(pr_number) -> string
 function Repo:url_for_pr(pr_number)
-	if self.flavor == "gitlab" then
-		-- Example: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/10393
-		return self:url() .. "/-/merge_requests/" .. pr_number
-	else
-		-- Example: https://github.com/NixOS/nixpkgs/pull/230398
-		return self:url() .. "/pull/" .. pr_number
-	end
+  if self.flavor == "gitlab" then
+    -- Example: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/10393
+    return self:url() .. "/-/merge_requests/" .. pr_number
+  else
+    -- Example: https://github.com/NixOS/nixpkgs/pull/230398
+    return self:url() .. "/pull/" .. pr_number
+  end
 end
 
 -- Get the URL for a given path in this repo.
@@ -113,30 +113,30 @@ end
 --
 -- self:url_for_file(file_path, commit, options: table) -> string
 function Repo:url_for_file(file_path, commit, options)
-	local url = self:url()
+  local url = self:url()
 
-	if self.flavor == "gitlab" then
-		-- Example: https://gitlab.haskell.org/ghc/ghc/-/blob/master/.gitattributes
-		url = url .. "/-/blob/" .. commit
-	else
-		-- Example: https://github.com/9999years/open-browser-git.nvim/blob/main/lua/open_browser_git.lua
-		url = url .. "/blob/" .. commit
-	end
-	url = url .. "/" .. file_path
+  if self.flavor == "gitlab" then
+    -- Example: https://gitlab.haskell.org/ghc/ghc/-/blob/master/.gitattributes
+    url = url .. "/-/blob/" .. commit
+  else
+    -- Example: https://github.com/9999years/open-browser-git.nvim/blob/main/lua/open_browser_git.lua
+    url = url .. "/blob/" .. commit
+  end
+  url = url .. "/" .. file_path
 
-	if options ~= nil then
-		-- Line range, if any.
-		if options.lines ~= nil then
-			-- Start line.
-			url = url .. "#L" .. options.lines.first
-			if options.lines.first ~= options.lines.last then
-				-- End line, if different than start.
-				url = url .. "-L" .. options.lines.last
-			end
-		end
-	end
+  if options ~= nil then
+    -- Line range, if any.
+    if options.lines ~= nil then
+      -- Start line.
+      url = url .. "#L" .. options.lines.first
+      if options.lines.first ~= options.lines.last then
+        -- End line, if different than start.
+        url = url .. "-L" .. options.lines.last
+      end
+    end
+  end
 
-	return url
+  return url
 end
 
 return Repo

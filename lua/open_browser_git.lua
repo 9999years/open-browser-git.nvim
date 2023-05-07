@@ -13,12 +13,27 @@ Configuration:
 - Always select current line
 - Always use current branch
 - Branch override (might be nice to scope this...?)
+- URL format detection...?
 
 ]]
 
-local M = {
-	debug = false,
-}
+local M = {}
+
+M.Repo = require("open_browser_git.repo")
+
+-- Remove duplicate items from a list-like table. Does not modify `t`, may
+-- shuffle items, discards keys.
+function tbl_uniq(t, fn)
+	local t2 = {}
+	for _, value in ipairs(t) do
+		t2[fn(value)] = value
+	end
+	return vim.tbl_values(t2)
+end
+
+function id(x)
+	return x
+end
 
 function command(executable, arguments, options)
 	local result = {
@@ -54,15 +69,15 @@ function command(executable, arguments, options)
 		result.stderr[#result.stderr] = nil
 	end
 	if result.exit_code ~= 0 then
-		local error = executable .. " failed with exit code " .. result.exit_code
+		local message = executable .. " failed with exit code " .. result.exit_code
 		if #result.stdout > 0 then
-			error = error .. "\nStdout: " .. vim.fn.join(result.stdout, "\n")
+			message = message .. "\nStdout: " .. vim.fn.join(result.stdout, "\n")
 		end
 		if #result.stderr > 0 then
-			error = error .. "\nStderr: " .. vim.fn.join(result.stderr, "\n")
+			message = message .. "\nStderr: " .. vim.fn.join(result.stderr, "\n")
 		end
-		-- TODO: Is `vim.notify(error, vim.log.levels.ERROR)` better?
-		assert(false, error)
+		-- TODO: Is `vim.notify(message, vim.log.levels.ERROR)` better?
+		error(message)
 	end
 	return result
 end
@@ -77,6 +92,7 @@ function parse_git_remote_url(url)
 	-- User, repo, whitespace.
 	-- NB: We trim a trailing `.git` from the repo.
 	local user_repo_pattern = "([^/]+)/([^/]+)%s"
+	-- NB: We trim a leading `git@` or other username from the hostname.
 	local patterns = {
 		-- NB: This first pattern also matches ssh://git@... URLs.
 		"git@([^:/]+)[:/]" .. user_repo_pattern, -- ssh
@@ -85,56 +101,47 @@ function parse_git_remote_url(url)
 		"git://([^/]+)/" .. user_repo_pattern, -- git
 		"https?://([^/]+)/" .. user_repo_pattern, -- http(s)
 	}
-	local matches = {}
 	for _, pattern in ipairs(patterns) do
-		local match = string.match(url, pattern)
-		if match ~= nil then
-			table.insert(matches, {
-				host = match[1],
-				user = match[2],
-				repo = string.gsub(match[3], "%.git$", ""),
+		local host, user, repo = url:match(pattern)
+		if host ~= nil then
+			local remote_name = url:match("^([^\t]+)\t")
+			return M.Repo:new({
+				host = host:gsub("^([^@]+)@", ""),
+				user = user,
+				repo = repo:gsub("%.git$", ""),
+				remote_name = remote_name,
 			})
 		end
 	end
-	return matches
 end
 
-function format_repo(repo)
-	return repo.host .. "/" .. repo.repo .. "/" .. repo.user
-end
-
-function parse_git_remote(lines, callback)
+function M.parse_git_remote(lines, callback)
 	local repos = {}
 	for _, line in ipairs(lines) do
-		vim.list_extend(repos, parse_github_remote_url(line))
-	end
-	table.sort(repos, function(a, b)
-		return format_repo(a) < format_repo(b)
-	end)
-	vim.fn.uniq(repos, function(a, b)
-		-- Ugh.
-		local formatted_a = format_repo(a)
-		local formatted_b = format_repo(b)
-		if formatted_a < formatted_b then
-			return -1
-		elseif formatted_a > formatted_b then
-			return 1
-		else
-			return 0
+		-- Can I simplify this to skip the nil check?
+		local repo = parse_git_remote_url(line)
+		if repo ~= nil then
+			table.insert(repos, repo)
 		end
+	end
+	repos = tbl_uniq(repos, M.Repo.display)
+	table.sort(repos, function(a, b)
+		return a:display() < b:display()
 	end)
 	if #repos == 0 then
-		assert(false, "No Git repos detected from `git remote -v` output")
+		error("No Git repos detected from `git remote -v` output")
 	elseif #repos == 1 then
 		callback(repos[1])
 	else
 		vim.ui.select(repos, {
 			prompt = "Git repo",
-			format_item = function(repo)
-				return format_repo(repo)
-			end,
+			format_item = M.Repo.display,
 		}, callback)
 	end
 end
 
-print(vim.inspect(git({ "remote", "-v" })))
+function M.get_git_repo(callback)
+	M.parse_git_remote(git({ "remote", "-v" }).stdout, callback)
+end
+
+return M

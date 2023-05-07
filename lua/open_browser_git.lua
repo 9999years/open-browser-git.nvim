@@ -110,7 +110,7 @@ end
 --
 -- open_git(path: string|nil, options: {lines: {line1: int, line2: int}|nil}|nil)
 function M.open_git(path, options)
-  if path == nil then
+  if path == nil or path == "" then
     path = vim.fn.expand("%")
   end
   local path_dir = vim.fs.dirname(path)

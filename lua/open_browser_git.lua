@@ -110,6 +110,9 @@ end
 --
 -- open_git(path: string|nil, options: {lines: {line1: int, line2: int}|nil}|nil)
 function M.open_git(path, options)
+  if path == nil then
+    path = vim.fn.expand("%")
+  end
   local path_dir = vim.fs.dirname(path)
   local path = M.resolve_git_path(path)
   M.get_git_repo(function(repo)

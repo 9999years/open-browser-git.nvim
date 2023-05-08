@@ -1,6 +1,6 @@
 local Path = {}
 
-function git_repo_root(dir)
+local function git_repo_root(dir)
   return require("open_browser_git.command").git({
     "rev-parse",
     "--show-toplevel",
@@ -26,8 +26,8 @@ end
 function Path:relative_to_root()
   return self:git({
     "ls-files",
-    "--cached", -- Show tracked files.
-    "--other", -- Show untracked files.
+    "--cached",    -- Show tracked files.
+    "--other",     -- Show untracked files.
     "--full-name", -- Paths relative to repository root.
     self.path,
   }).stdout[1]

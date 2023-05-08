@@ -26,7 +26,7 @@ if (not M.is_wsl) and M.is_unix and vim.fn.filereadable("/proc/version") then
 end
 
 -- Default browser discovery. Use `setup` for configuration.
-function M.get_browser()
+function M.detect_browser()
   -- I use macOS so it comes first :)
   if M.is_macos then
     if vim.fn.executable("open") == 1 then
@@ -89,7 +89,7 @@ function M.setup(config)
       M.browser = config.browser
     end
   else
-    M.browser = M.get_browser()
+    M.browser = M.detect_browser()
   end
   if M.browser == nil then
     error(

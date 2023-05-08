@@ -18,12 +18,11 @@ Configuration:
 TODO: optional user/repo argument for commands
 
 ]]
-
 local M = {}
 
 -- Remove duplicate items from a list-like table. Does not modify `t`, may
 -- shuffle items, discards keys.
-function tbl_uniq(t, fn)
+local function tbl_uniq(t, fn)
   local t2 = {}
   for _, value in ipairs(t) do
     t2[fn(value)] = value
@@ -31,21 +30,17 @@ function tbl_uniq(t, fn)
   return vim.tbl_values(t2)
 end
 
-function id(x)
-  return x
-end
-
-function parse_git_remote_url(url)
+local function parse_git_remote_url(url)
   -- User, repo, whitespace.
   -- NB: We trim a trailing `.git` from the repo.
   local user_repo_pattern = "([^/]+)/([^/]+)%s"
   -- NB: We trim a leading `git@` or other username from the hostname.
   local patterns = {
     -- NB: This first pattern also matches ssh://git@... URLs.
-    "git@([^:/]+)[:/]" .. user_repo_pattern, -- ssh
-    "%s([^:/]+)[:/]" .. user_repo_pattern, -- ssh
-    "ssh://([^/]+)/" .. user_repo_pattern, -- ssh
-    "git://([^/]+)/" .. user_repo_pattern, -- git
+    "git@([^:/]+)[:/]" .. user_repo_pattern,  -- ssh
+    "%s([^:/]+)[:/]" .. user_repo_pattern,    -- ssh
+    "ssh://([^/]+)/" .. user_repo_pattern,    -- ssh
+    "git://([^/]+)/" .. user_repo_pattern,    -- git
     "https?://([^/]+)/" .. user_repo_pattern, -- http(s)
   }
   for _, pattern in ipairs(patterns) do
@@ -126,7 +121,7 @@ function M.setup(config)
     end, {
       complete = "file",
       desc = "",
-      nargs = "?", -- 0 or 1.
+      nargs = "?",  -- 0 or 1.
       range = true, -- Default current line.
     })
   end

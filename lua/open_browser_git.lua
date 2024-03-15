@@ -74,6 +74,10 @@ function M.parse_git_remote(lines, callback)
   end
   repos = tbl_uniq(repos, require("open_browser_git.repo").display)
   table.sort(repos, function(a, b)
+    if a.remote_name == "origin" and b.remote_name ~= "origin" then
+      -- Sort 'origin' remotes first.
+      return true
+    end
     return a:display() < b:display()
   end)
   if #repos == 0 then

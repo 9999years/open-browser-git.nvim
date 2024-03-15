@@ -18,7 +18,12 @@ Configuration:
 TODO: optional user/repo argument for commands
 
 ]]
-local M = {}
+local M = {
+  _config = {
+    create_commands = true,
+    command_prefix = "OpenGit",
+  },
+}
 
 -- Remove duplicate items from a list-like table. Does not modify `t`, may
 -- shuffle items, discards keys.
@@ -37,10 +42,10 @@ local function parse_git_remote_url(url)
   -- NB: We trim a leading `git@` or other username from the hostname.
   local patterns = {
     -- NB: This first pattern also matches ssh://git@... URLs.
-    "git@([^:/]+)[:/]" .. user_repo_pattern,  -- ssh
-    "%s([^:/]+)[:/]" .. user_repo_pattern,    -- ssh
-    "ssh://([^/]+)/" .. user_repo_pattern,    -- ssh
-    "git://([^/]+)/" .. user_repo_pattern,    -- git
+    "git@([^:/]+)[:/]" .. user_repo_pattern, -- ssh
+    "%s([^:/]+)[:/]" .. user_repo_pattern, -- ssh
+    "ssh://([^/]+)/" .. user_repo_pattern, -- ssh
+    "git://([^/]+)/" .. user_repo_pattern, -- git
     "https?://([^/]+)/" .. user_repo_pattern, -- http(s)
   }
   for _, pattern in ipairs(patterns) do
@@ -52,6 +57,7 @@ local function parse_git_remote_url(url)
         user = user,
         repo = repo:gsub("%.git$", ""),
         remote_name = remote_name,
+        flavor_patterns = M._config.flavor_patterns,
       }
     end
   end
@@ -105,13 +111,15 @@ end
 -- config: { browser: browser|nil,
 --           create_commands: bool = true,
 --           command_prefix: string = "OpenGit",
+--           flavor_patterns: table<string, list<string>>|nil = nil,
 --         }
 function M.setup(config)
-  if config.browser ~= nil then
+  M._config = vim.tbl_extend("force", M._config, config)
+  if M._config.browser ~= nil then
     require("open_browser_git.open_browser").setup(config)
   end
-  if (config.create_commands == nil) or config.create_commands then
-    local prefix = config.command_prefix or "OpenGit"
+  if (M._config.create_commands == nil) or M._config.create_commands then
+    local prefix = M._config.command_prefix or "OpenGit"
     vim.api.nvim_create_user_command(prefix, function(args)
       local opts = {}
       if args.range > 0 then
@@ -121,7 +129,7 @@ function M.setup(config)
     end, {
       complete = "file",
       desc = "",
-      nargs = "?",  -- 0 or 1.
+      nargs = "?", -- 0 or 1.
       range = true, -- Default current line.
     })
   end

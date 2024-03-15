@@ -30,13 +30,34 @@ local Repo = {}
 -- Construct a new repository from a hostname (like "github.com"), a username
 -- (like "9999years"), and a repository name (like "open-browser-git.nvim").
 --
--- Repo:new({host: string, user: string, repo: string, remote_name: string|nil}) -> self
+--
+-- `flavor_patterns` is a table mapping flavors to lists of patterns.
+--
+-- Repo:new({host: string, user: string, repo: string, remote_name: string|nil, flavor_patterns: table<string, list<string>>|nil}) -> self
 function Repo:new(ret)
   if ret.host:find("gitlab") then
     ret.flavor = "gitlab"
   elseif ret.host:find("github") then
     ret.flavor = "github"
+  elseif ret.host:find("forgejo") then
+    ret.flavor = "forgejo"
+  elseif ret.flavor_patterns ~= nil then
+    for flavor, patterns in pairs(ret.flavor_patterns) do
+      for _, pattern in ipairs(patterns) do
+        if ret.host:find(pattern) then
+          ret.flavor = flavor
+          break
+        end
+      end
+
+      -- No labeled break in Lua 5.1.
+      if ret.flavor ~= nil then
+        break
+      end
+    end
+    ret.flavor_patterns = nil
   end
+
   setmetatable(ret, self)
   self.__index = self
   return ret
@@ -67,14 +88,30 @@ function Repo:url()
   return "https://" .. self.host .. "/" .. self.user .. "/" .. self.repo
 end
 
--- Get the URL for a commit or branch in this repo.
+-- Get the URL for a commit in this repo.
 --
--- NB: May want to split this into two functions in the future.
---
--- self:url_for_commit(commit_hash) -> string
+-- self:url_for_commit(string) -> string
 function Repo:url_for_commit(commit_hash)
-  -- Example: https://github.com/NixOS/nixpkgs/tree/master
-  return self:url() .. "/tree/" .. commit_hash
+  if self.flavor == "forgejo" then
+    -- Example: https://codeberg.org/forgejo/forgejo/src/commit/65f9319c8fabe3b6ffabd5c341da1b25fb39e0be
+    return self:url() .. "/src/commit/" .. commit_hash
+  else
+    -- Example: https://github.com/NixOS/nixpkgs/tree/bda93c2221bc4185056723795c62e1b4cc661c4b
+    return self:url() .. "/tree/" .. commit_hash
+  end
+end
+
+-- Get the URL for a branch in this repo.
+--
+-- self:url_for_branch(string) -> string
+function Repo:url_for_branch(branch)
+  if self.flavor == "forgejo" then
+    -- Example: https://codeberg.org/forgejo/forgejo/src/branch/forgejo
+    return self:url() .. "/src/branch/" .. branch
+  else
+    -- Example: https://github.com/NixOS/nixpkgs/tree/master
+    return self:url() .. "/tree/" .. branch
+  end
 end
 
 -- Get the URL for an issue in this repo, by number.
@@ -99,6 +136,9 @@ function Repo:url_for_pr(pr_number)
   if self.flavor == "gitlab" then
     -- Example: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/10393
     return self:url() .. "/-/merge_requests/" .. pr_number
+  elseif self.flavor == "forgejo" then
+    -- Example: https://codeberg.org/forgejo/forgejo/pulls/2669
+    return self:url() .. "/pulls/" .. pr_number
   else
     -- Example: https://github.com/NixOS/nixpkgs/pull/230398
     return self:url() .. "/pull/" .. pr_number
@@ -118,6 +158,9 @@ function Repo:url_for_file(file_path, commit, options)
   if self.flavor == "gitlab" then
     -- Example: https://gitlab.haskell.org/ghc/ghc/-/blob/master/.gitattributes
     url = url .. "/-/blob/" .. commit
+  elseif self.flavor == "forgejo" then
+    -- Example: https://codeberg.org/forgejo/forgejo/src/commit/65f9319c8fabe3b6ffabd5c341da1b25fb39e0be/poetry.toml
+    url = url .. "/src/commit/" .. commit
   else
     -- Example: https://github.com/9999years/open-browser-git.nvim/blob/main/lua/open_browser_git.lua
     url = url .. "/blob/" .. commit

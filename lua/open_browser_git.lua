@@ -73,18 +73,18 @@ function M.parse_git_remote(lines, callback)
     end
   end
   repos = tbl_uniq(repos, require("open_browser_git.repo").display)
-  table.sort(repos, function(a, b)
-    if a.remote_name == "origin" and b.remote_name ~= "origin" then
-      -- Sort 'origin' remotes first.
-      return true
-    end
-    return a:display() < b:display()
-  end)
   if #repos == 0 then
     error("No Git repos detected from `git remote -v` output")
   elseif #repos == 1 then
     callback(repos[1])
   else
+    table.sort(repos, function(a, b)
+      if a.remote_name == "origin" and b.remote_name ~= "origin" then
+        -- Sort 'origin' remotes first.
+        return true
+      end
+      return a:display() < b:display()
+    end)
     vim.ui.select(repos, {
       prompt = "Git repo",
       format_item = require("open_browser_git.repo").display,

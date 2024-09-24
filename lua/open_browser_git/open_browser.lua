@@ -9,23 +9,37 @@
 -- system: https://github.com/vim-jp/vital.vim
 local M = {}
 
+--- @class open_browser_git.open_browser.Browser
+--- @field cmd string
+--- @field args? string[]
+
+-- TODO: Augh, this doesn't run lazily!?
 -- See `:h feature-list`
 M.is_unix = vim.fn.has("unix")
 M.is_windows = vim.fn.has("win32")
 M.is_cygwin = vim.fn.has("win32unix")
 M.is_macos = vim.fn.has("mac")
 M.is_wsl = vim.fn.has("wsl")
--- TODO: Does this work? I copied the logic from `open-browser.vim` and I do
--- not want to get out a Windows box to test this. Mostly because that would
--- mean getting out of bed :)
-if (not M.is_wsl) and M.is_unix and vim.fn.filereadable("/proc/version") then
-  local lines = vim.fn.readfile("/proc/version", "b", 1)
-  if lines[1] ~= nil and lines[1]:lower():find("microsoft") ~= nil then
-    M.is_wsl = true
+M._detected_wsl = false
+
+function M.detect_wsl()
+  if M._detected_wsl then
+    return
+  end
+  M._detected_wsl = true
+  -- TODO: Does this work? I copied the logic from `open-browser.vim` and I do
+  -- not want to get out a Windows box to test this. Mostly because that would
+  -- mean getting out of bed :)
+  if (not M.is_wsl) and M.is_unix and vim.fn.filereadable("/proc/version") then
+    local lines = vim.fn.readfile("/proc/version", "b", 1)
+    if lines[1] ~= nil and lines[1]:lower():find("microsoft") ~= nil then
+      M.is_wsl = true
+    end
   end
 end
 
 -- Default browser discovery. Use `setup` for configuration.
+--- @return open_browser_git.open_browser.Browser?
 function M.detect_browser()
   -- I use macOS so it comes first :)
   if M.is_macos then
@@ -79,11 +93,12 @@ function M.detect_browser()
   end
 end
 
--- browser: string|{ cmd: string, args: list<string>|nil }
--- config: { browser: browser|nil }
+--- @param config open_browser_git.Config
 function M.setup(config)
+  M.detect_wsl()
   if config.browser ~= nil then
     if type(config.browser) == "string" then
+      ---@diagnostic disable-next-line: assign-type-mismatch
       M.browser = { cmd = config.browser }
     else
       M.browser = config.browser
@@ -99,6 +114,8 @@ function M.setup(config)
 end
 
 -- Open a URL in the default browser.
+--
+--- @param url string
 function M.open_url(url)
   if M.browser == nil then
     M.setup {}

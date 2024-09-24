@@ -25,20 +25,22 @@ local M = {
   },
 }
 
+--- @param path open_browser_git.path
+--- @param callback fun(item: open_browser_git.repo)
 function M.pick_remote(path, callback)
   local repos = path:list_remotes()
-  table.sort(repos, function(a, b)
-    if a.remote_name == "origin" and b.remote_name ~= "origin" then
-      -- Sort 'origin' remotes first.
-      return true
-    end
-    return a:display() < b:display()
-  end)
   if #repos == 0 then
     error("No Git repos detected from `git remote -v` output")
   elseif #repos == 1 then
     callback(repos[1])
   else
+    table.sort(repos, function(a, b)
+      if a.remote_name == "origin" and b.remote_name ~= "origin" then
+        -- Sort 'origin' remotes first.
+        return true
+      end
+      return a:display() < b:display()
+    end)
     vim.ui.select(repos, {
       prompt = "Git repo",
       format_item = require("open_browser_git.repo").display,
@@ -51,22 +53,27 @@ end
 -- If the `path` is absent, open the repo's homepage.
 --
 -- open_git(path: string|nil, options: {lines: {line1: int, line2: int}|nil}|nil)
+--- @param path? string
 function M.open_git(path, options)
-  path = require("open_browser_git.path"):new(path)
-  M.pick_remote(path, function(repo)
+  local path_ = require("open_browser_git.path"):new(path)
+  M.pick_remote(path_, function(repo)
     -- TODO: Find the most recent _pushed_ commit.
-    local commit = path:git({ "rev-parse", "HEAD" }).stdout[1]
-    local url = repo:url_for_file(path:relative_to_root(), commit, options)
+    --- @type string
+    local commit = path_:git({ "rev-parse", "HEAD" }).stdout
+    local url = repo:url_for_file(path_:relative_to_root(), commit, options)
     require("open_browser_git.open_browser").open_url(url)
   end)
 end
 
--- browser: string|{ cmd: string, args: list<string>|nil }
--- config: { browser: browser|nil,
---           create_commands: bool = true,
---           command_prefix: string = "OpenGit",
---           flavor_patterns: table<string, list<string>>|nil = nil,
---         }
+--- @class open_browser_git.Config
+--- @field browser? open_browser_git.open_browser.Browser
+--- @field create_commands? boolean = true
+--- @field command_prefix? string = "OpenGit"
+--- @field flavor_patterns? { [string]: string[] }
+
+-- Set up open_browser_git.nvim.
+--
+--- @param config open_browser_git.Config
 function M.setup(config)
   M._config = vim.tbl_extend("force", M._config, config)
   if M._config.browser ~= nil then

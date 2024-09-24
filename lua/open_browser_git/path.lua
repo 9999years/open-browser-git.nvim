@@ -1,3 +1,7 @@
+--- @class open_browser_git.path
+---
+--- @field path string
+--- @field repo_root string
 local Path = {}
 
 local function git_repo_root(dir)
@@ -8,6 +12,9 @@ local function git_repo_root(dir)
 end
 
 -- A path in a Git repository.
+--
+--- @param path? string
+--- @return open_browser_git.path
 function Path:new(path)
   if (path == nil) or (path == "") then
     path = vim.fn.expand("%:p")
@@ -23,6 +30,8 @@ end
 -- Gets this path relative to the repository root.
 --
 -- If you have newlines in your filenames: Don't.
+--
+--- @return string
 function Path:relative_to_root()
   return self:git({
     "ls-files",
@@ -30,9 +39,13 @@ function Path:relative_to_root()
     "--other", -- Show untracked files.
     "--full-name", -- Paths relative to repository root.
     self.path,
-  }).stdout[1]
+  }).stdout
 end
 
+-- Run a Git command.
+--
+--- @param args string[]
+--- @param options? open_browser_git.command.Options
 function Path:git(args, options)
   return require("open_browser_git.command").git(
     args,
@@ -42,14 +55,22 @@ end
 
 -- Remove duplicate items from a list-like table. Does not modify `t`, may
 -- shuffle items, discards keys.
-local function tbl_uniq(t, fn)
-  local t2 = {}
-  for _, value in ipairs(t) do
-    t2[fn(value)] = value
+--
+--- @generic T
+--- @generic U
+--- @param table T[]
+--- @param fn fun(T): U
+--- @return T[]
+local function tbl_uniq(table, fn)
+  local result = {}
+  for _, value in ipairs(table) do
+    result[fn(value)] = value
   end
-  return vim.tbl_values(t2)
+  return vim.tbl_values(result)
 end
 
+--- @param url string
+--- @return open_browser_git.repo?
 local function parse_git_remote_url(url)
   -- User, repo, whitespace.
   -- NB: We trim a trailing `.git` from the repo.
@@ -78,10 +99,11 @@ local function parse_git_remote_url(url)
   end
 end
 
+--- @return open_browser_git.repo[]
 function Path:list_remotes()
-  local lines = self:git({ "remote", "-v" }).stdout
+  local output = self:git { "remote", "-v" }
   local repos = {}
-  for _, line in ipairs(lines) do
+  for line in vim.gsplit(output.stdout, "\n", { plain = true }) do
     -- Can I simplify this to skip the nil check?
     local repo = parse_git_remote_url(line)
     if repo ~= nil then
@@ -89,6 +111,7 @@ function Path:list_remotes()
     end
   end
   repos = tbl_uniq(repos, require("open_browser_git.repo").display)
+  return repos
 end
 
 return Path

@@ -1,5 +1,3 @@
--- type Repo
---
 -- A Git repository.
 --
 -- For now, there's only one implementation, but if I find hosts that don't
@@ -25,7 +23,19 @@
 --
 -- This is all speculation; I don't actually need anything past GitHub and
 -- GitLab support right now. Time and user feedback will tell :)
+--
+--- @class open_browser_git.repo: open_browser_git.repo.Options
+---
+--- @field flavor string
 local Repo = {}
+
+--- @class open_browser_git.repo.Options
+---
+--- @field host string
+--- @field user string
+--- @field repo string
+--- @field remote_name? string
+--- @field flavor_patterns? { [string]: string[] }
 
 -- Construct a new repository from a hostname (like "github.com"), a username
 -- (like "9999years"), and a repository name (like "open-browser-git.nvim").
@@ -33,39 +43,42 @@ local Repo = {}
 --
 -- `flavor_patterns` is a table mapping flavors to lists of patterns.
 --
--- Repo:new({host: string, user: string, repo: string, remote_name: string|nil, flavor_patterns: table<string, list<string>>|nil}) -> self
-function Repo:new(ret)
-  if ret.host:find("gitlab") then
-    ret.flavor = "gitlab"
-  elseif ret.host:find("github") then
-    ret.flavor = "github"
-  elseif ret.host:find("forgejo") then
-    ret.flavor = "forgejo"
-  elseif ret.flavor_patterns ~= nil then
-    for flavor, patterns in pairs(ret.flavor_patterns) do
+--- @param options open_browser_git.repo.Options
+--- @return open_browser_git.repo
+function Repo:new(options)
+  --- @class open_browser_git.repo
+  local result = options
+  if result.host:find("gitlab") then
+    result.flavor = "gitlab"
+  elseif result.host:find("github") then
+    result.flavor = "github"
+  elseif result.host:find("forgejo") then
+    result.flavor = "forgejo"
+  elseif result.flavor_patterns ~= nil then
+    for flavor, patterns in pairs(result.flavor_patterns) do
       for _, pattern in ipairs(patterns) do
-        if ret.host:find(pattern) then
-          ret.flavor = flavor
+        if result.host:find(pattern) then
+          result.flavor = flavor
           break
         end
       end
 
       -- No labeled break in Lua 5.1.
-      if ret.flavor ~= nil then
+      if result.flavor ~= nil then
         break
       end
     end
-    ret.flavor_patterns = nil
+    result.flavor_patterns = nil
   end
 
-  setmetatable(ret, self)
+  setmetatable(result, self)
   self.__index = self
-  return ret
+  return result
 end
 
 --  Display the repo to the user.
 --
---  self:display() -> string
+--- @return string
 function Repo:display()
   -- Example: github.com/NixOS/nixpkgs
   local displayed = self.host .. "/" .. self.user .. "/" .. self.repo
@@ -78,7 +91,7 @@ end
 
 -- Get the URL for this repo; a homepage or similar.
 --
---  self:url() -> string
+--- @return string
 function Repo:url()
   -- TODO: Support non-HTTPS repository URLs?
   -- NB: This _could_ forward out to `self:display` but philisophically I
@@ -90,7 +103,8 @@ end
 
 -- Get the URL for a commit in this repo.
 --
--- self:url_for_commit(string) -> string
+--- @param commit_hash string
+--- @return string
 function Repo:url_for_commit(commit_hash)
   if self.flavor == "forgejo" then
     -- Example: https://codeberg.org/forgejo/forgejo/src/commit/65f9319c8fabe3b6ffabd5c341da1b25fb39e0be
@@ -103,7 +117,8 @@ end
 
 -- Get the URL for a branch in this repo.
 --
--- self:url_for_branch(string) -> string
+--- @param branch string
+--- @return string
 function Repo:url_for_branch(branch)
   if self.flavor == "forgejo" then
     -- Example: https://codeberg.org/forgejo/forgejo/src/branch/forgejo
@@ -115,7 +130,8 @@ function Repo:url_for_branch(branch)
 end
 
 -- Get the URL for an issue in this repo, by number.
--- self:url_for_issue(issue_number) -> string
+--- @param issue_number integer
+--- @return string
 function Repo:url_for_issue(issue_number)
   if self.flavor == "gitlab" then
     -- Example: https://gitlab.haskell.org/ghc/ghc/-/issues/23351
@@ -131,7 +147,8 @@ end
 --
 -- TODO: Maybe add support for pull requests by branch?
 --
--- self:url_for_pr(pr_number) -> string
+--- @param pr_number integer
+--- @return string
 function Repo:url_for_pr(pr_number)
   if self.flavor == "gitlab" then
     -- Example: https://gitlab.haskell.org/ghc/ghc/-/merge_requests/10393
@@ -145,13 +162,20 @@ function Repo:url_for_pr(pr_number)
   end
 end
 
+--- @class open_browser_git.repo.Lines
+--- @field line1 integer
+--- @field line2 integer
+
+--- @class open_browser_git.repo.UrlOptions
+--- @field lines? open_browser_git.repo.Lines A range of lines to view.
+
 -- Get the URL for a given path in this repo.
 -- Paths are given relative to the repository root.
--- Options (any values may be nil):
---  - lines: {line1: int, line2: int}. A range of lines to view.
---    If line1 == line2, implementations may simplify the URL.
 --
--- self:url_for_file(file_path, commit, options: table) -> string
+--- @param file_path string
+--- @param commit string
+--- @param options? { lines?: open_browser_git.repo.Lines }
+--- @return string
 function Repo:url_for_file(file_path, commit, options)
   local url = self:url()
 

@@ -8,7 +8,7 @@ local function git_repo_root(dir)
   return require("open_browser_git.command").git({
     "rev-parse",
     "--show-toplevel",
-  }, { cwd = dir }).stdout[1]
+  }, { cwd = dir }).stdout
 end
 
 -- A path in a Git repository.

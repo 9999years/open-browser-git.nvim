@@ -28,8 +28,6 @@ function M.command(executable, arguments, options)
       .. " failed with exit code "
       .. output.code
       .. "\nError executing: "
-      .. executable
-      .. " "
       .. vim.fn.join(arguments, " ")
     if #output.stdout > 0 then
       message = message .. "\nStdout: " .. output.stdout

@@ -15,11 +15,11 @@ local M = {}
 
 -- TODO: Augh, this doesn't run lazily!?
 -- See `:h feature-list`
-M.is_unix = vim.fn.has("unix")
-M.is_windows = vim.fn.has("win32")
-M.is_cygwin = vim.fn.has("win32unix")
-M.is_macos = vim.fn.has("mac")
-M.is_wsl = vim.fn.has("wsl")
+M.is_unix = vim.fn.has("unix") == 1
+M.is_windows = vim.fn.has("win32") == 1
+M.is_cygwin = vim.fn.has("win32unix") == 1
+M.is_macos = vim.fn.has("mac") == 1
+M.is_wsl = vim.fn.has("wsl") == 1
 M._detected_wsl = false
 
 function M.detect_wsl()

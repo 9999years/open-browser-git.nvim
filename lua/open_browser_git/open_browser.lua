@@ -30,7 +30,11 @@ function M.detect_wsl()
   -- TODO: Does this work? I copied the logic from `open-browser.vim` and I do
   -- not want to get out a Windows box to test this. Mostly because that would
   -- mean getting out of bed :)
-  if (not M.is_wsl) and M.is_unix and vim.fn.filereadable("/proc/version") then
+  if
+    not M.is_wsl
+    and M.is_unix
+    and vim.fn.filereadable("/proc/version") == 1
+  then
     local lines = vim.fn.readfile("/proc/version", "b", 1)
     if lines[1] ~= nil and lines[1]:lower():find("microsoft") ~= nil then
       M.is_wsl = true
@@ -62,7 +66,7 @@ function M.detect_browser()
       "rundll32.exe",
       "rundll32",
     } do
-      if vim.fn.filereadable(path) or vim.fn.executable(path) == 1 then
+      if vim.fn.filereadable(path) == 1 or vim.fn.executable(path) == 1 then
         return { cmd = path, args = { "url.dll,FileProtocolHandler" } }
       end
     end

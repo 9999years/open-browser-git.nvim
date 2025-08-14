@@ -25,14 +25,14 @@ local M = {
   },
 }
 
---- @param path open_browser_git.path
---- @param callback fun(item: open_browser_git.repo)
-function M.pick_remote(path, callback)
-  local repos = path:list_remotes()
+--- @param commit string
+--- @param repos open_browser_git.repo[]
+--- @param callback fun(commit: string, item: open_browser_git.repo)
+function M.pick_remote(commit, repos, callback)
   if #repos == 0 then
     error("No Git repos detected from `git remote -v` output")
   elseif #repos == 1 then
-    callback(repos[1])
+    callback(commit, repos[1])
   else
     table.sort(repos, function(a, b)
       if a.remote_name == "origin" and b.remote_name ~= "origin" then
@@ -44,7 +44,9 @@ function M.pick_remote(path, callback)
     vim.ui.select(repos, {
       prompt = "Git repo",
       format_item = require("open_browser_git.repo").display,
-    }, callback)
+    }, function(repo)
+      callback(commit, repo)
+    end)
   end
 end
 
@@ -56,10 +58,12 @@ end
 --- @param path? string
 function M.open_git(path, options)
   local path_ = require("open_browser_git.path"):new(path)
-  M.pick_remote(path_, function(repo)
-    -- TODO: Find the most recent _pushed_ commit.
-    --- @type string
-    local commit = path_:git({ "rev-parse", "HEAD" }).stdout
+  local commit_remotes = path_:find_remote_commit()
+  if commit_remotes == nil then
+    return
+  end
+  local repos = path_:remote_names_to_repos(commit_remotes.remotes)
+  M.pick_remote(commit_remotes.commit, repos, function(commit, repo)
     local url = repo:url_for_file(path_:relative_to_root(), commit, options)
     require("open_browser_git.open_browser").open_url(url)
   end)

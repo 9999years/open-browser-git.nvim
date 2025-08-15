@@ -1,23 +1,3 @@
---[[
-
-Interface:
-
-- :OpenGit [PATH]
-- :OpenGitIssue [[#]NUMBER]
-- :OpenGitPR [[#]NUMBER|BRANCH]
-- :OpenGitHomepage
-- :OpenGitCommit COMMIT
-
-Configuration:
-
-- Always select current line
-- Always use current branch
-- Branch override (might be nice to scope this...?)
-- URL format detection...?
-
-TODO: optional user/repo argument for commands
-
-]]
 local M = {
   _config = {},
 }

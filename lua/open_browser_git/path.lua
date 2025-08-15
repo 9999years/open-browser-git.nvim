@@ -13,7 +13,7 @@ end
 
 -- A path in a Git repository.
 --
---- @param path? string
+--- @param path? string Defaults to the current file's directory.
 --- @return open_browser_git.path
 function Path:new(path)
   if (path == nil) or (path == "") then

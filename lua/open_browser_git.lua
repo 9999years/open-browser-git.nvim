@@ -23,8 +23,8 @@ local M = {
 }
 
 --- @param commit string
---- @param repos open_browser_git.repo[]
---- @param callback fun(commit: string, item: open_browser_git.repo)
+--- @param repos open_browser_git.Repo[]
+--- @param callback fun(commit: string, item: open_browser_git.Repo)
 function M.pick_remote(commit, repos, callback)
   if #repos == 0 then
     error("No Git repos detected from `git remote -v` output")
@@ -51,7 +51,7 @@ end
 --- @field url string
 --- @field path open_browser_git.path
 --- @field relative_to_root string
---- @field repo open_browser_git.repo
+--- @field repo open_browser_git.Repo
 --- @field commit string
 
 --- Get commit information and a URL for the given path and options and invoke

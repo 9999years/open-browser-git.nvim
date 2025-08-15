@@ -69,11 +69,11 @@ local function tbl_uniq(table, fn)
   return vim.tbl_values(result)
 end
 
---- Parse a Git remote URL. The returned `open_browser_git.repo`'s
+--- Parse a Git remote URL. The returned `open_browser_git.Repo`'s
 --- `remote_name` field will always be `nil`.
 ---
 --- @param url string A Git remote URL like `git@github.com:9999years/open-browser-git.nvim.git`.
---- @return open_browser_git.repo?
+--- @return open_browser_git.Repo?
 local function parse_git_remote_url(url)
   -- User, repo.
   -- NB: We trim a trailing `.git` from the repo.
@@ -100,10 +100,10 @@ local function parse_git_remote_url(url)
   end
 end
 
---- Transform a list of Git remote names into parsed `open_browser_git.repo`s.
+--- Transform a list of Git remote names into parsed `open_browser_git.Repo`s.
 ---
 --- @param remotes string[]
---- @return open_browser_git.repo[]
+--- @return open_browser_git.Repo[]
 function Path:remote_names_to_repos(remotes)
   local repos = {}
   for _, remote in ipairs(remotes) do

@@ -24,7 +24,7 @@
 -- This is all speculation; I don't actually need anything past GitHub and
 -- GitLab support right now. Time and user feedback will tell :)
 --
---- @class open_browser_git.repo: open_browser_git.repo.Options
+--- @class open_browser_git.Repo: open_browser_git.repo.Options
 ---
 --- @field flavor string
 local Repo = {}
@@ -44,9 +44,9 @@ local Repo = {}
 -- `flavor_patterns` is a table mapping flavors to lists of patterns.
 --
 --- @param options open_browser_git.repo.Options
---- @return open_browser_git.repo
+--- @return open_browser_git.Repo
 function Repo:new(options)
-  --- @class open_browser_git.repo
+  --- @class open_browser_git.Repo
   local result = options
   if result.host:find("gitlab") then
     result.flavor = "gitlab"

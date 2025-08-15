@@ -49,7 +49,7 @@ end
 
 --- @class open_browser_git.Info
 --- @field url string
---- @field path open_browser_git.path
+--- @field path open_browser_git.Path
 --- @field relative_to_root string
 --- @field repo open_browser_git.repo
 --- @field commit string

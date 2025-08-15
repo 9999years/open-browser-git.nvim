@@ -1,4 +1,4 @@
---- @class open_browser_git.path
+--- @class open_browser_git.Path
 ---
 --- @field path string
 --- @field repo_root string
@@ -14,7 +14,7 @@ end
 -- A path in a Git repository.
 --
 --- @param path? string Defaults to the current file's directory.
---- @return open_browser_git.path
+--- @return open_browser_git.Path
 function Path:new(path)
   if (path == nil) or (path == "") then
     path = vim.fn.expand("%:p")

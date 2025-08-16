@@ -122,6 +122,9 @@ end
 --- @field commit string
 --- @field remotes string[]
 
+--- @class open_browser_git.FindRemoteCommitOptions
+--- @field path? boolean Only find commits changing the given path.
+
 --- Find the nearest commit to `HEAD` (topologically) that is present on at
 --- least one remote.
 ---
@@ -130,26 +133,36 @@ end
 --- TODO: Offer an option for the user to pick from several commits for e.g.
 --- megamerge workflows.
 ---
+--- @param options? open_browser_git.FindRemoteCommitOptions
 --- @return open_browser_git.CommitRemotes?
-function Path:find_remote_commit()
+function Path:find_remote_commit(options)
+  options = vim.tbl_extend("force", {
+    path = false,
+  }, options or {})
+
   -- First, traverse commit ancestors in topological order starting with
   -- `HEAD`.
-  local commits = vim.gsplit(
-    self:git({
-      "rev-list",
-      -- TODO: Paginate if we can't find a pushed commit. But certainly you're at
-      -- least pushing every 25 commits or so...?
-      "--max-count",
-      "25",
-      "--topo-order",
-      "HEAD",
-    }).stdout,
-    "\n",
-    {
-      plain = true,
-      trimempty = true,
-    }
-  )
+  local args = {
+    "rev-list",
+    -- TODO: Paginate if we can't find a pushed commit. But certainly you're at
+    -- least pushing every 25 commits or so...?
+    "--max-count",
+    "25",
+    "--topo-order",
+    "HEAD",
+  }
+
+  if options.path then
+    vim.list_extend(args, {
+      "--",
+      self.path,
+    })
+  end
+
+  local commits = vim.gsplit(self:git(args).stdout, "\n", {
+    plain = true,
+    trimempty = true,
+  })
 
   for commit in commits do
     local remotes = self:remotes_for_commit(commit)

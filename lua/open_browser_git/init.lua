@@ -2,6 +2,15 @@ local M = {
   _config = {},
 }
 
+--- Log a message with `vim.notify` unless the `log` setting is `false`.
+---
+--- @param message string
+local function maybe_log(message)
+  if M._config.log ~= false then
+    vim.notify(message, vim.log.levels.INFO)
+  end
+end
+
 --- @class open_browser_git.PickRemoteOptions
 --- @field commit string
 --- @field repos open_browser_git.Repo[]
@@ -87,6 +96,7 @@ end
 --- @param options? open_browser_git.Options
 function M.open_git(options)
   M.get_info(options, function(info)
+    maybe_log(info.url)
     require("open_browser_git.open_browser").open_url(info.url)
   end)
 end
@@ -96,6 +106,7 @@ end
 --- @param options? open_browser_git.Options
 function M.copy_git(options)
   M.get_info(options, function(info)
+    maybe_log(info.url)
     vim.fn.setreg("+", info.url)
   end)
 end
@@ -108,6 +119,7 @@ end
 --- @field browser? open_browser_git.open_browser.Browser
 --- @field commands? open_browser_git.CommandsConfig|boolean
 --- @field flavor_patterns? { [string]: string[] }
+--- @field log? boolean
 
 -- Set up open_browser_git.nvim.
 --
